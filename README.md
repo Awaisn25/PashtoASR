@@ -1,8 +1,3 @@
-# PashtoASR
-A realtime Pashto ASR application using frontend VAD and FastAPI
----
-# app2_optim.py
-
 ## Overview
 
 `app2_optim.py` is a FastAPI-based backend service for speech-to-text transcription and translation, primarily supporting Pashto and Urdu languages. It leverages VAD (Voice Activity Detection), ASR (Automatic Speech Recognition), and translation models to process audio files and live audio streams. The service exposes several endpoints for file upload, language selection, real-time transcription, and buffer management.
@@ -65,4 +60,55 @@ A realtime Pashto ASR application using frontend VAD and FastAPI
 ### Running the Server
 
 ```sh
-python [app2_optim.py](http://_vscodecontentref_/0)
+python app2_optim.py
+```
+
+## API Endpoints
+
+`GET /` 
+- Returns the main HTML page.
+  
+`POST /process_lang/`
+- Set the language for a session.
+- Body: `{ "lang": "<language>", "uuid": "<uuid>" }`
+
+`POST /process_file/`
+- Upload and process a base64-encoded audio file.
+- Body: `{ "file": "<base64_wav>", "uuid": "<uuid>" }`
+
+`POST /procFile/`
+- Process an audio file from a URL.
+- Body: `{ "link": "<file_url>", "uuid": "<uuid>" }`
+
+`POST /process_rtt_psUR/`
+- Real-time transcription and translation for Pashto.
+
+`POST /process_rtt_urUR/`
+- Real-time transcription for Urdu.
+
+`POST /clear`
+- Clear buffers for a session.
+- Body: { "uuid": "<uuid>" }
+
+## File Structure
+- `app2_optim.py` - Main FastAPI application.
+- `predict.py` - Contains the saluz function for model inference.
+- `templates/` - HTML templates.
+- `static/` - Static files (JS, CSS, etc.).
+- `certs/` - SSL certificates.
+- `VAD/` - VAD model files.
+- `new_nllb/` - (Translation models, if used.)
+
+## Customization
+- Model Paths: Update model paths in the code as needed.
+- Languages: Add or modify supported languages in the endpoints and model loading sections.
+- Frontend: Update templates in the templates/ directory.
+
+## Troubleshooting
+- Ensure all model files are downloaded and paths are correct.
+- Check CUDA availability for GPU inference.
+- Verify SSL certificate paths if running with HTTPS.
+
+## Acknowledgements
+- [HuggingFace Transformers](https://huggingface.co/docs/transformers/index)
+- [Silero VAD](https://github.com/snakers4/silero-vad)
