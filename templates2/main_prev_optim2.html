@@ -1,0 +1,891 @@
+<html lang="ur" dir="rtl">
+<head>
+    <title>Speech Recognition</title>
+    <style>
+
+    </style>
+    <style type="text/css">
+    @font-face {
+	  font-family: 'Noto Nastaliq Urdu';
+	  src: url('static/fonts/NotoNastaliqUrdu-Regular.ttf') format('truetype');
+	  font-weight: normal;
+	  font-style: normal;
+	}
+
+	@font-face {
+	  font-family: 'Noto Nastaliq Urdu';
+	  src: url('static/fonts/NotoNastaliqUrdu-Bold.ttf') format('truetype');
+	  font-weight: bold;
+	  font-style: normal;
+	}
+        .select-ul {
+            width: 200px;
+            text-align: left;
+            height: 34px;
+            background: #331f1f;
+            color: white;
+            font-size: 15px;
+        }
+
+        .select-ul:hover {
+            cursor: pointer;
+        }
+
+        .hide{
+            display:none;
+        }
+
+        input[type='file'] {
+            color: transparent;
+        }
+    </style> 
+        
+    
+</head>
+<body>
+
+    <!-- <div class="container">
+        <h3>Toggle Switch</h3>
+        <label class="switch">
+            <input type="checkbox" id="checkTranscribe" checked> 
+            <span class="slider"></span>
+        </label>
+    </div> -->
+
+    <div class="select">
+        <select id="selectDiv" class="select-ul" onchange="loadContent1(); DefineLang();">
+            <option value="" selected disabled hidden >Choose Format</option>
+            <option value="index" id="index">Urdu to Urdu</option>
+            <option value="pashto" id="pashto">Pashto to Urdu</option>
+            <!-- <option value="dari" id="dari">Dari to Urdu</option> -->
+            <!-- Add more options as needed -->
+        </select>
+    </div>
+
+    <script type="text/javascript">
+             var IP_ADDRESS="10.23.23.9"
+             var PORT=8000
+             var PROTOCOL="https"
+                function DefineLang(){
+                const selectElement = document.getElementById('selectDiv')
+                const selectedValue = selectElement.value;
+
+                fetch(`${PROTOCOL}://${IP_ADDRESS}:${PORT}/process_lang/`, {
+                    method: "POST",
+                    body: selectedValue
+                }).catch( error => console.error("Error: ", error))
+            }
+    </script> 
+        
+        <br />
+        <div class="index cat hide">
+            <textarea id="trans_ur" rows="5" style="width:100%; padding:1%; margin-top:.5em;font-family:Noto Nastaliq Urdu;font-size:15pt" placeholder="Your text will appear here"></textarea>
+            <div style="text-align:center;margin-top:10px;">
+
+                <button id="start_ur" style="width:100px; height: 35px;">Start</button>
+                <button style="width:100px;height:35px;" id="stop_ur" class="hide" title="Starts/stops listening for speech.">Stop</button>
+                <button style="width:100px;height:35px;" id="btn_clear_ur" onclick="clearConsole_ur();" title="">Clear</button>
+                <button style="width:100px;height:35px;" id="btn_copy_ur" title="" >Copy</button>
+                <button style="width:100px;height:35px;" id="btn_download_ur" title="">Download</button>
+            </div>
+
+            <!-- <script>
+                // Get a reference to the checkbox element
+                const toggleSwitch = document.querySelector('#checkTranscribe');
+        
+                // Add a change event listener to the checkbox
+                toggleSwitch.addEventListener('change', function () {
+                    // Check if the checkbox is checked or not
+                    if (toggleSwitch.checked) {
+                        
+                    } else {
+                        console.log('Checkbox is not checked.')
+                        // console.log('Checkbox is not checked.');
+                    }
+                });
+            </script> -->
+            <div style="text-align:center;margin-top:10px;">
+                <span style="text-align: center;justify-content: center;align-items: center;margin-bottom:10px"><b>File Transcribe</b></span>
+                <textarea id="trans_urdu_file" rows="5" style="width:100%; padding:1%; margin-top:.5em;font-family:Noto Nastaliq Urdu;font-size:15pt;"></textarea>
+                <input type="file" style="width:100px;height:35px;" id="FileInput_Urdu" />
+                <button style="width:100px;height:35px;" id="processAud_ur" onclick="processAudio_ur()">Process Audio</button>
+                <button style="width:100px;height:35px;" id="btn_clear_urt" onclick="" title="" >Copy</button>
+                <button id="downloadButtonUrdu" disabled="true">Download Text File</button>
+            </div>
+            
+            <script src="static/jquery/jquery-3.5.1.min.js"></script>
+            <script src="static/RecordRTC.js"></script>
+            <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/RecordRTC/5.6.2/RecordRTC.js"></script> -->
+            <script src="static/utf8.js"></script>
+            <script src="static/asd.js"></script>
+            <script src="static/base64.js"></script>
+
+            <!-- <script src="static/jquery/hark.js"></script> -->
+
+            <script>
+                // let uniqueId = crypto.randomUUID();
+                let uniqueId = 'abc';
+                let output_transcription_urdu = document.getElementById('trans_urdu_file');
+                // let output_trans = document.getElementById('para');
+                var transcript = ''
+                function processAudio_ur() {
+                output_transcription_urdu.value = ''
+                console.log('processAudio_ur')
+                const inputElement = document.getElementById("FileInput_Urdu");
+                const file = inputElement.files[0];
+                
+
+                fetch(`${PROTOCOL}://${IP_ADDRESS}:${PORT}/process_file/`, {
+                    method: "POST",
+                    body: file
+                }).then((response) => {
+                    const reader = response.body.getReader();
+                    document.getElementById('FileInput_Urdu').disabled = true;
+                    document.getElementById('processAud_ur').disabled = true;
+
+                function processChunk_ur({done, value }) {
+
+
+                    if (done) {
+                        document.getElementById('FileInput_Urdu').disabled = false;
+                        document.getElementById('processAud_ur').disabled = false;
+                        document.getElementById("downloadButtonUrdu").disabled = false;
+                        document.getElementById("downloadButtonUrdu").addEventListener("click", function() {
+
+                            const fileName = file.fileName+".txt";
+                            const blob = new Blob([transcript], { type: "text/plain" });
+                            const url = URL.createObjectURL(blob);
+                            const anchor = document.createElement("a");
+
+                            anchor.href = url;
+                            anchor.download = fileName;
+                            document.body.appendChild(anchor);
+                            anchor.click();
+                            document.body.removeChild(anchor);
+                            URL.revokeObjectURL(url);}
+                        );
+
+                        // file stream completed, anything else to do here?
+                        return;}
+                    
+                        const uint8Array = new Uint8Array(value);
+                        const text = new TextDecoder().decode(uint8Array);
+                        transcript = transcript + text 
+                        console.log(transcript)
+                        output_transcription_urdu.value = transcript ;
+                        //   output_trans.textContent = transcript;
+
+                        return reader.read().then(processChunk_ur);
+                    }
+
+                        reader.read().then(processChunk_ur);
+                        }).catch(error => console.error("Error:", error));
+                }
+            </script>
+
+            <script type="text/javascript">
+                //Dari To Urdu Variables
+                let outputDiv_ur = document.getElementById('trans_ur');
+                let startButton_ur = document.getElementById('start_ur');
+                let stopButton_ur = document.getElementById('stop_ur');
+
+                AllText_ur = ''
+                let timer_ur;
+                let recorder_ur;
+                var state_ur = true
+                navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(function (stream) {
+                        recorder_ur = RecordRTC(stream, { type: 'audio', mimeType: 'audio/webm', numberOfAudioChannels: 1, desiredSampRate: 16000});
+                    }).catch(function (error) {
+                        alert('Unable to capture your microphone.')
+                        console.error(error)
+                    });
+                startButton_ur.onclick = function () { 
+                    state_ur = true;
+                    recorder_ur.startRecording();
+                    // console.log('Sample Rate: ' + recorder_ur.sampleRate)
+                    // console.log('Start Clicked')
+                    $("#start_ur").addClass("hide")
+                    $("#stop_ur").removeClass("hide")
+
+                    timer_ur = setTimeout(sendAudioDataLive_ur, 500);
+                }
+
+                stopButton_ur.onclick = function () {
+                    clearInterval(timer_ur)
+                    timer_ur = null
+                    recorder_ur.stopRecording(function () {
+                        let blob = this.getBlob();
+                        if (blob != null) {
+                            sendAudioDataHttp_ur(blob);
+                        }
+                        $("#stop_ur").addClass("hide")
+                        $("#start_ur").removeClass("hide")
+                    state_ur = false
+                    });
+                    // recorder_ur.startRecording();
+                    // startButton.click()
+                    // console.log('Started Again...')
+                }
+
+                function getFileName(fileExtension) {
+                    var d = new Date();
+                    var year = d.getFullYear();
+                    var month = d.getMonth();
+                    var date = d.getDate();
+                    return 'RecordRTC-' + year + month + date + '-' + '.' + fileExtension;
+                }
+
+                document.getElementById('btn_download_ur').onclick = function() {
+                    this.disabled = true;
+                    if(!recorder_ur || !recorder_ur.getBlob()) return;
+
+                    var blob = recorder_ur.getBlob();
+                    var file = new File([outputDiv_ur.value], getFileName('txt'), {
+                        type: 'text/txt'
+                    });
+                    invokeSaveAsDialog(file);
+                };  
+
+                function sendAudioDataLive_ur() {
+                    if (recorder_ur) {
+                        recorder_ur.stopRecording(async function () {
+                            let blob = this.getBlob();
+                            // console.log(typeof blob.arrayBuffer())
+                            // alert(blob)
+                            let url = `${PROTOCOL}://${IP_ADDRESS}:${PORT}/process_rtt_urUR/`;
+                            if (blob !== null) {
+                                // sendAudioDataHttp_ur(blob);
+                                // console.log(buffer.Buffer.from(await blob.arrayBuffer(), 'binary'))
+                                fetch(url, {
+                                    method : 'POST',
+                                    body : JSON.stringify({
+                                        'data': buffer.Buffer.from(await blob.arrayBuffer(), 'binary'),
+                                        'uuid': uniqueId,
+                                        'end': false
+                                    }),
+                                }).then(response => response.json()).then(data => {
+                                    if (state_ur) {
+                                        // console.log(data)
+                                        // alert(data['translation'] )
+                                        outputDiv_ur.value = AllText_ur + data['transcribe'] 
+                                   }
+                                   else{
+                                       console.log('cant fetch')
+                                   }
+                                }).catch(error => {
+                                    console.error('Error: ', error)
+                                })
+                                // blob = null;
+                            }
+                        });
+                    }
+                    startButton_ur.click();
+                    // recorder_ur.startRecording();
+                }
+
+
+                async function sendAudioDataHttp_ur(blob) {
+                    console.log('Data sent to TCP | Urdu');
+                    let url = `${PROTOCOL}://${IP_ADDRESS}:${PORT}/process_rtt_urUR/`;
+                    // <!--        let formData = new FormData();-->z
+                    // <!--        formData.append('audio', blob);-->
+
+                    fetch(url, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            'data': buffer.Buffer.from(await blob.arrayBuffer(), 'binary'),
+                            'uuid': uniqueId,
+                            'end': true
+                        }),
+                    })
+                            .then(response => response.json())
+                            .then(data => {
+                                // dataa = utf8.decode(base64.decode(data['transcribe']))
+                                // console.log(dataa)
+                                AllText_ur += data['transcribe'] + '. '
+                                // output_transcription_urdu.value += data['translation'] + '\n'
+                                outputDiv_ur.value = AllText_ur
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                            });
+                }
+
+                function clearConsole_ur() {
+                    // console.log('btn clear urdu clicked...')
+                    outputDiv_ur.value = " "
+                }
+
+                document.getElementById('btn_copy_ur').onclick = function copyContent() {
+                    console.log('btn_copy_ur clicked')
+                    try {
+                        navigator.clipboard.writeText(outputDiv_ur.value);
+                        // console.log('Content copied to clipboard');
+                        alert('Text Copied to Clipboard!')
+                        /* Resolved - text copied to clipboard successfully */
+                    } catch (err) {
+                        console.error('Failed to copy: ', err);
+                        /* Rejected - text failed to copy to the clipboard */
+                    }
+                }
+
+            </script>
+
+        </div>
+
+        <br />
+
+        <div class="pashto hide cat">
+            <textarea id="trans_ps" rows="5" style="width:100%; padding:1%; margin-top:.5em;font-family:Noto Nastaliq Urdu;font-size:15pt"></textarea>
+            <div style="text-align:center;margin-top:10px;">
+
+                <!--<button id="uploadButton">Upload</button>-->
+                <!-- <input type="file" id="audioFileInput" style="width:100px;height:35px;"> -->
+                <button id="start_ps" style="width:100px; height: 35px;">Start</button>
+                <button id="stop_ps" class="hide" style="width:100px;height:35px;">Stop</button>
+                <button style="width:100px;height:35px;" id="btn_clear_ps" title="">Clear</button>
+                <button style="width:100px;height:35px;" id="btn_copy_ps" title="">Copy</button>
+                <button style="width:100px;height:35px;" id="btn_download_ps" title="">Download</button>
+                <div id="output"></div>
+            </div>
+
+            <div style="text-align:center;margin-top:10px;">
+                <span style="text-align: center;justify-content: center;align-items: center;margin-bottom:10px"><b>File Transcribe</b></span>
+                <textarea id="trans_pashto_file" rows="5" style="width:100%; padding:1%; margin-top:.5em;font-family:Noto Nastaliq Urdu;font-size:15pt;"></textarea>
+                <input type="file" style="width:100px;height:35px;" id="FileInput_Pashto" />
+                <button style="width:100px;height:35px;" id="processAud_ps" onclick="processAudio_ps()">Process Audio</button>
+                <button style="width:100px;height:35px;" id="btn_clear_pst" onclick="clearConsole_ps_transcribe();" title="">Clear</button>
+                <button id="downloadButtonPashto" disabled="true">Download Text File</button>
+                
+            </div>
+
+
+            <!-- <script src="static/jquery/jquery-3.5.1.min.js"></script> -->
+            <!-- <script src="static/jquery/recordRTC.js"></script> -->
+            <!-- <script src="https://www.WebRTC-Experiment.com/RecordRTC.js"></script> -->
+            <!-- <script src="static/jquery/utf8.js"></script> -->
+            <!-- <script src="static/jquery/base64.js"></script> -->
+            <!-- <script src="static/jquery/asd.js"></script> -->
+            <!-- <script src="static/jquery/hark.js"></script> -->
+
+            <script>
+                let output_transcription_pashto = document.getElementById('trans_pashto_file');
+                let output_trans = document.getElementById('trans_ps');
+                // let output_trans = document.getElementById('para');
+                var transcript = ''
+                function processAudio_ps() {
+                    const inputElement = document.getElementById("FileInput_Pashto");
+                    const file = inputElement.files[0];
+                    output_transcription_pashto.value = ''
+
+                    fetch(`${PROTOCOL}://${IP_ADDRESS}:${PORT}/process_file/`, {
+                        method: "POST",
+                        body: file
+                    }).then((response) => {
+                        const reader = response.body.getReader();
+                        document.getElementById('FileInput_Pashto').disabled = true
+                        document.getElementById('processAud_ps').disabled = true
+                        transcript=''
+                        transcript_temp=''
+                        translate_temp=''
+
+                        function processChunk_ps({done, value }) {
+                            if (done) {
+                                document.getElementById("downloadButtonPashto").disabled = false;
+                                document.getElementById('FileInput_Pashto').disabled = false;
+                                document.getElementById('processAud_ps').disabled = false;
+                                document.getElementById("downloadButtonPashto").addEventListener("click", function() {
+                                    
+
+                                    const fileName = file.fileName+".txt";
+                                    const blob = new Blob([transcript], { type: "text/plain" });
+                                    const url = URL.createObjectURL(blob);
+                                    const anchor = document.createElement("a");
+
+                                    anchor.href = url;
+                                    anchor.download = fileName;
+                                    document.body.appendChild(anchor);
+                                    anchor.click();
+                                    document.body.removeChild(anchor);
+                                    URL.revokeObjectURL(url);}
+                                );
+
+                                // file stream completed, anything else to do here?
+                                return;
+                            }
+                            // console.
+                            const uint8Array = new Uint8Array(value);
+                            const text = new TextDecoder().decode(uint8Array);
+                            const objects = text.split("\n");
+                            for (const obj of objects){
+                                try{
+                                    console.log(obj)
+                                    res = JSON.parse(obj)
+                                    console.log(res)
+                                    transcript_temp += res['transcription']
+                                    translate_temp += res['translation']
+                                    output_transcription_pashto.value = translate_temp
+                                    output_trans.value = transcript_temp
+                                }catch(e){
+                                    // console.error(e)
+                                }
+                            }
+                                // transcript =transcript +  text 
+                                // // console.log(transcript)
+                                // output_transcription_pashto.value = transcript ;
+                                // //   output_trans.textContent = transcript;
+
+                            return reader.read().then(processChunk_ps);
+                        }
+
+                    reader.read().then(processChunk_ps);
+                    }).catch(error => console.error("Error:", error));
+                }
+                
+            </script>
+
+            <script type="text/javascript">
+
+                let outputDiv_ps = document.getElementById('trans_ps');
+                let startButton_ps = document.getElementById('start_ps');
+                let stopButton_ps = document.getElementById('stop_ps');
+
+                let recorder_ps;
+                let timer_ps;
+                var state_ps = true
+                AllText_ps = ''
+                let concatenator_ps = ''
+                let FullSentence_ps = ''
+                var timeInterval;
+                var mediaRecorder;
+                let seconds = 1;
+                startButton_ps.onclick = function () {
+                    state_ps = true;
+                    seconds = 1;
+                    timeInterval = seconds * 1000;
+
+                    // FullSentence_ps = outputDiv_ps.value
+                    navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(function (stream) {
+                        recorder = new RecordRTC(stream, {
+                            recorderType: StereoAudioRecorder,
+                            mimeType:'audio/wav',
+                            // desiredSampRate:16000,
+                            // bufferSize:8192,
+                            numberOfAudioChannels:1,
+                            timeSlice:timeInterval,
+                            ondataavailable: function(blob) {
+                                console.log(blob)
+                                var base64data;                
+                                var reader = new FileReader();
+                                reader.readAsDataURL(blob); 
+                                reader.onloadend = function() {
+                                    var base64data = reader.result;                
+                                    // console.log(base64data);
+                                    base64data = base64data.replace('data:audio/wav;base64,', '') 
+                                    
+                                    fetch(`${PROTOCOL}://${IP_ADDRESS}:${PORT}/process_rtt_psUR/`, {
+                                        method:'POST',
+                                        body:JSON.stringify({
+                                        'data':base64data,
+                                        'uuid':uniqueId,
+                                        'end':false
+                                        })
+                                    }).then(response => response.json()).then(data => {
+                                    if (state_ps){
+                                        if ('bufferOverflow' in data){
+                                            console.log('Requests Overflowed.');
+                                            concatenator_ps = data['transcribe'];
+                                            outputDiv_ps.value = FullSentence_ps + data['transcribe'] + ' ';
+                                            output_transcription_pashto.value += data['translation'] + '\n';
+                                            FullSentence_ps += concatenator_ps;
+                                            outputDiv_ps.value = FullSentence_ps;
+                                        }
+                                        else{
+                                            concatenator_ps = data['transcribe']
+                                            outputDiv_ps.value = FullSentence_ps + data['transcribe'];
+                                        }
+                                    }
+                                    else{
+                                        console.log('cant fetch')
+                                    }}).catch(error => {console.error('Error: ', error)})
+                                }
+                            }
+                        })
+
+                        recorder.startRecording();
+                        recorder.stream = stream
+                        // mediaRecorder.start(timeInterval);
+                        $("#start_ps").addClass("hide")
+                        $("#stop_ps").removeClass("hide")
+
+                    }).catch(function (error) {
+                        alert('Unable to capture your microphone.')
+                        console.error(error)
+                    });
+                }
+
+                stopButton_ps.onclick = function () {
+                    state_ps = false;
+                    recorder.stopRecording(function(){
+                        blb = recorder.getBlob();
+                        console.log(blb)
+                        var base64data;                
+                        var reader = new FileReader();
+                        reader.readAsDataURL(blb); 
+                        reader.onloadend = function() {
+                            var base64data = reader.result;                
+                            // console.log(base64data);
+                            base64data = base64data.replace('data:audio/wav;base64,', '') 
+                            
+                            fetch(`${PROTOCOL}://${IP_ADDRESS}:${PORT}/process_rtt_psUR/`, {
+                            method:'POST',
+                            body:JSON.stringify({
+                                'data':base64data,
+                                'uuid':'abc',
+                                'end':true
+                            })
+                            }).then(response => response.json()).then(data => {
+                                output_transcription_pashto.value += data['transcribe'] + '\n';
+                            })
+                        }
+                        recorder.stream.stop();
+                        // recorder = null;
+                    })
+
+                    // mediaRecorder.stop();
+                    // mediaRecorder.stream.stop();
+                    
+                    $("#stop_ps").addClass("hide")
+                    $("#start_ps").removeClass("hide")
+                    
+                    FullSentence_ps += concatenator_ps
+                    outputDiv_ps.value = FullSentence_ps
+                    console.log(FullSentence_ps)
+                }
+
+                
+
+                function getFileName(fileExtension) {
+                    var d = new Date();
+                    var year = d.getFullYear();
+                    var month = d.getMonth();
+                    var date = d.getDate();
+                    return 'RecordRTC-' + year + month + date + '-' + '.' + fileExtension;
+                }
+
+                document.getElementById('btn_download_ps').onclick = function() {
+                    this.disabled = true;
+                    if(!recorder_ps || !recorder_ps.getBlob()) return;
+
+                    var blob = recorder_ps.getBlob();
+                    var file = new File([outputDiv_ps.value], getFileName('txt'), {
+                        type: 'text/txt'
+                    });
+                    invokeSaveAsDialog(file);
+                };  
+
+                document.getElementById('btn_clear_ps').addEventListener('click', function (e) {
+                    fetch(`${PROTOCOL}://${IP_ADDRESS}:${PORT}/clear_ps`, {
+                        method:'POST',
+                        body:JSON.stringify({
+                            'uuid':uniqueId
+                        })
+                    }).then(data => data.json()).then(post => {
+                            console.log(post)
+                        })
+
+                    output_transcription_pashto.value = '';
+                    outputDiv_ps.value = '';
+                    FullSentence_ps = '';
+                })
+
+                function clearConsole_ps_transcribe() {
+                    output_transcription_pashto.value = " "
+                }
+
+                document.getElementById('btn_copy_ps').onclick = function copyContent() {
+                    console.log('btn_copy_ps clicked')
+                    try {
+                        navigator.clipboard.writeText(outputDiv_ps.value);
+                        console.log('Content copied to clipboard');
+                        /* Resolved - text copied to clipboard successfully */
+                    } catch (err) {
+                        console.error('Failed to copy: ', err);
+                        /* Rejected - text failed to copy to the clipboard */
+                    }
+                }
+
+            </script>
+
+        </div>
+
+        <br />
+
+        <div class="dari cat hide">
+            <textarea id="trans_dr" rows="5" style="width:100%; padding:1%; margin-top:.5em;font-family:Noto Nastaliq Urdu;font-size:15pt"></textarea>
+            <div style="text-align:center;margin-top:10px;">
+                <!--<button id="uploadButton">Upload</button>-->
+                <!-- <input type="file" id="audioFileInput" style="width:100px;height:35px;"> -->
+                <button id="start_dr" style="width:100px; height: 35px;">Start</button>
+                <button id="stop_dr" class="hide" style="width:100px; height:35px;">Stop</button>
+                <button style="width:100px;height:35px;" id="btn_clear_dr" onclick="clearConsole_dr();" title="">Clear</button>
+                <button style="width:100px;height:35px;" id="btn_copy_dr" title="">Copy</button>
+                <button style="width:100px;height:35px;" id="btn_download_dr" title="">Download</button>
+                <div id="output"></div>
+            </div>
+
+            <div style="text-align:center;margin-top:10px;">
+                <span style="text-align: center;justify-content: center;align-items: center;margin-bottom:10px"><b>File Transcribe</b></span>
+                <textarea id="trans_dari_file" rows="5" style="width:100%; padding:1%; margin-top:.5em;font-family:Noto Nastaliq Urdu;font-size:15pt;"></textarea>
+                <input type="file" style="width:100px;height:35px;" id="FileInput_Dari" />
+                <button style="width:100px;height:35px;" id="btn_clear_drt" onclick="clearConsole_dr_transcribe();" title="">Clear</button>
+                <button style="width:100px;height:35px;" id="processAud_dr" onclick="processAudio_dr()">Process Audio</button>
+                <button id="downloadButtonDari" disabled="true">Download Text File</button>
+            </div>
+
+
+            <!-- <script src="static/jquery/jquery-3.5.1.min.js"></script> -->
+            <!-- <script src="static/jquery/recordRTC.js"></script> -->
+            <!-- <script src="static/jquery/hark.js"></script> -->
+
+            <script>
+
+                let output_transcription_dari = document.getElementById('trans_dari_file');
+                // let output_trans = document.getElementById('para');
+                var transcript = ''
+                function processAudio_dr() {
+                const inputElement = document.getElementById("FileInput_Dari");
+                const file = inputElement.files[0];
+                
+
+                fetch("https://192.168.20.30:8000/process_file/", {
+                    method: "POST",
+                    body: file
+                }).then((response) => {
+                    const reader = response.body.getReader();
+                    document.getElementById('FileInput_Dari').disabled = true
+                    document.getElementById('processAud_dr').disabled = true
+
+                function processChunk_dr({done, value }) {
+                    if (done) {
+                        document.getElementById("downloadButtonDari").disabled = false;
+                        document.getElementById('FileInput_Dari').disabled = false;
+                        document.getElementById('processAud_dr').disabled = false;
+                        
+                        document.getElementById("downloadButtonDari").addEventListener("click", function() {
+
+                            const fileName = file.fileName+".txt";
+                            const blob = new Blob([transcript], { type: "text/plain" });
+                            const url = URL.createObjectURL(blob);
+                            const anchor = document.createElement("a");
+
+                            anchor.href = url;
+                            anchor.download = fileName;
+                            document.body.appendChild(anchor);
+                            anchor.click();
+                            document.body.removeChild(anchor);
+                            URL.revokeObjectURL(url);}
+                        );
+
+                        // file stream completed, anything else to do here?
+                        return;}
+                    
+                        const uint8Array = new Uint8Array(value);
+                        const text = new TextDecoder().decode(uint8Array);
+                        transcript =transcript +  text 
+                        console.log(transcript)
+                        output_transcription_dari.value = transcript ;
+                        //   output_trans.textContent = transcript;
+
+                        return reader.read().then(processChunk_dr);
+                        }
+
+                        reader.read().then(processChunk_dr);
+                        }).catch(error => console.error("Error:", error));
+                    }
+            </script>
+
+            <script type="text/javascript">
+
+                //Dari To Urdu Variables
+                let outputDiv_dr = document.getElementById('trans_dr');
+                let startButton_dr = document.getElementById('start_dr');
+                let stopButton_dr = document.getElementById('stop_dr');
+
+                let recorder_dr;    
+                let timer_dr;
+                let concatenator_dr = ''
+                var state_dr = true;
+                let FullSentence_dr = ''
+                startButton_dr.onclick = function () {
+                    state_dr = true;
+                    console.log('transsss: ' + outputDiv_dr.value)
+                    navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(function (stream) {
+                        recorder_dr = RecordRTC(stream, {type: 'audio', 
+                                                    mimeType: 'audio/webm',
+                                                    numberOfAudioChannels: 1, 
+                                                    desiredSampRate: 16000, 
+                                                    disableLogs: false});
+                        recorder_dr.startRecording();
+                        console.log('Sample Rate: ' + recorder_dr.sampleRate)
+                        
+                        $("#start_dr").addClass("hide")
+                        $("#stop_dr").removeClass("hide")
+
+                    }).catch(function (error) {
+                        alert('Unable to capture your microphone.')
+                        console.error(error)
+                    });
+
+                    timer_dr = setTimeout(sendAudioDataLive_dr, 500);
+                }
+
+                function clearConsole_dr_transcribe() {
+                    output_transcription_dari.value = " "
+                }
+
+                function sendAudioDataLive_dr() {
+                    if (recorder_dr && state_dr) {
+                        recorder_dr.stopRecording(function () {
+                            let blob = this.getBlob();
+                            console.log(blob)
+                            let url = 'https://192.168.20.30:8000/process_rtt_drUR_live/';
+                            if (blob != null) {
+                                // sendAudioDataHttp_ur(blob);
+                                fetch(url, {
+                                    method : 'POST',
+                                    body : blob
+                                }).then(response => response.json()).then(data => {
+                                    if (state_dr){
+                                        // AllText_drbg += data['translation']
+                                        // outputDiv_dr.value = AllText_dr + data['translation'] 
+                                        concatenator_dr = data['translation']
+                                        outputDiv_dr.value = FullSentence_dr + data['translation']
+                                    }
+                                    else{
+                                        console.log('cant fetch')
+                                    }
+                                }).catch(error => {
+                                    console.error('Error: ', error)
+                                })
+                                // blob = null;
+                            }
+                        });
+                    }
+                    startButton_dr.click();
+                    // recorder_dr.startRecording();
+                }
+
+                stopButton_dr.onclick = function () {
+                     // Clear the timer when "Stop" button is clicked
+                    clearTimeout(timer_dr)
+                    timer_dr = 0
+                    recorder_dr.stopRecording(function () {
+                        let blob = this.getBlob();
+                        if (blob != null) {
+                            sendAudioDataHttp_dr(blob);
+                        }
+                        $("#stop_dr").addClass("hide")
+                        $("#start_dr").removeClass("hide")
+                    });
+                    // startButton.click()
+                    // console.log('Started Again...')
+                    FullSentence_dr += concatenator_dr
+                    outputDiv_dr.value = FullSentence_dr
+                    state_dr = false
+                }
+
+                function getFileName(fileExtension) {
+                    var d = new Date();
+                    var year = d.getFullYear();
+                    var month = d.getMonth();
+                    var date = d.getDate();
+                    return 'RecordRTC-' + year + month + date + '-' + '.' + fileExtension;
+                }
+
+                document.getElementById('btn_download_dr').onclick = function() {
+                    this.disabled = true;
+                    if(!recorder_dr || !recorder_dr.getBlob()) return;
+
+                    var blob = recorder_dr.getBlob();
+                    var file = new File([outputDiv_dr.value], getFileName('txt'), {
+                        type: 'text/txt'
+                    });
+                    invokeSaveAsDialog(file);
+                };  
+
+                function sendAudioDataHttp_dr(blob) {
+                console.log('Data sent to TCP | Dari');
+                let url = 'https://192.168.20.30:8000/process_rtt_drUR/';
+                // <!--        let formData = new FormData();-->z
+                // <!--        formData.append('audio', blob);-->
+
+                fetch(url, {
+                    method: 'POST',
+                    body: blob
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        // console.log(data)
+                        output_transcription_dari.value += data['translation'] + '\n'
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+            }
+
+                function clearConsole_dr() {
+                    outputDiv_dr.value = " "
+                }
+
+                document.getElementById('btn_copy_dr').onclick = function copyContent() {
+                    console.log('btn_copy_dr clicked')
+                    try {
+                        navigator.clipboard.writeText(outputDiv_dr.value);
+                        console.log('Content copied to clipboard');
+                        /* Resolved - text copied to clipboard successfully */
+                    } catch (err) {
+                        console.error('Failed to copy: ', err);
+                        /* Rejected - text failed to copy to the clipboard */
+                    }
+                }
+
+            </script>
+
+        </div>
+
+        <div id="contentPlaceholder">
+            <!-- Content will be dynamically loaded here -->
+        </div>
+</body>
+</html>
+
+
+<script>
+function loadContent() {
+    const selectElement = document.getElementById('selectContent');
+    const selectedValue = selectElement.value;
+    const contentPlaceholder = document.getElementById('contentPlaceholder');
+
+    // Fetch the content file based on the selected value
+    fetch(`${selectedValue}.html`)
+    
+        .then(response => response.text())
+        .then(html => {
+            // Replace the content of the placeholder with the fetched HTML
+            contentPlaceholder.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error loading content:', error);
+        });
+    }
+
+    function loadContent1() {
+        const selectElement = document.getElementById('selectDiv')
+        const selectedValue = selectElement.value;
+        
+        $(".cat").addClass("hide")
+        const selectedDiv = document.getElementById(selectedValue)
+        $("." + selectedValue).removeClass('hide')
+    }
+</script>

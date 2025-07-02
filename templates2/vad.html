@@ -1,0 +1,327 @@
+<html lang="ur" dir="rtl">
+
+<head>
+    <title>Speech Recognition</title>
+
+    <style type="text/css">
+        @font-face {
+            font-family: 'Noto Nastaliq Urdu';
+            src: url('static/fonts/NotoNastaliqUrdu-Regular.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Noto Nastaliq Urdu';
+            src: url('static/fonts/NotoNastaliqUrdu-Bold.ttf') format('truetype');
+            font-weight: bold;
+            font-style: normal;
+        }
+
+        .select-ul {
+            width: 300px;
+            text-align: left;
+            height: 34px;
+            background: #331f1f;
+            color: white;
+            font-size: 15px;
+        }
+
+        .select-ul:hover {
+            cursor: pointer;
+        }
+
+        .hide {
+            display: none;
+        }
+
+        input[type='file'] {
+            color: transparent;
+        }
+    </style>
+
+
+</head>
+
+<body id="root">
+    <div class="select" style="min-width: 300px;">
+        <select id="selectDiv" class="select-ul" onchange="set_nonEng(); " onfocus="this.selectedIndex = -1;">
+            <option value="" selected disabled hidden>Choose Format</option>
+
+            <option selected value="w2_wh" id="w2_wh">Seamless Medium</option>
+            <!-- Add more options as needed -->
+        </select>
+
+        <button id="switch_btn_en" style="height: 35px; width: 120px; margin-right: 100px;">Switch to English</button>
+        <button id="switch_btn_ur" style="height: 35px; width: 120px; margin-right: 100px;" class="hide">Switch to
+            Urdu</button>
+        <p>Elapsed Time: <span id="elapsedTime">0 seconds</span></p>
+
+    </div>
+    <textarea id="outputTextarea" rows="5"
+        style="width:100%; padding:1%; margin-top:.5em;font-family:Noto Nastaliq Urdu;font-size:15pt;direction: rtl; overflow-wrap: break-word"
+        placeholder="Your text will appear here"></textarea>
+
+    <div style="text-align:center;margin-top:10px;">
+
+        <button id="start_ur_eng" style="width:100px; height: 35px;">Start</button>
+        <button style="width:100px;height:35px;" id="stop_ur_eng" class="hide"
+            title="Starts/stops listening for speech.">Stop
+        </button>
+        <button style="width:100px;height:35px;" id="btn_clear_ur" title="">Clear</button>
+        <button style="width:100px;height:35px;" id="btn_copy_ur" title="">Copy</button>
+        <button style="width:100px;height:35px;" id="btn_download_combine_urdu" title="">Download</button>
+    </div>
+
+    <script src="static/ort/dist/ort.min.js"></script>
+    <script src="static/vad/dist/bundle.min.js"></script>
+    <script src="static/jquery/jquery-3.5.1.min.js"></script>
+    <script src="static/jquery/RecordRTC.js"></script>
+    <script src="static/jquery/utf8.js"></script>
+    <script src="static/jquery/asd.js"></script>
+    <script src="static/jquery/base64.js"></script>
+
+
+    <script type="text/javascript">
+        let uniqueId = crypto.randomUUID();
+        let startTime;
+        let mode = "urd";
+
+        stopped = true;
+        let switch_en = document.getElementById('switch_btn_en');
+        let switch_ur = document.getElementById('switch_btn_ur');
+
+        let currentLangauge = "Urdu";
+        switch_en.onclick = function () {
+
+
+            $("#switch_btn_en").addClass("hide");
+            $("#switch_btn_ur").removeClass("hide");
+            mode = "eng"
+            // set_eng();
+            $("#stop_ur_both").click();
+            $("#start_ur_both").click();
+            // loadContent1();
+
+
+        }
+
+
+
+
+
+        switch_ur.onclick = function () {
+
+
+
+            $("#switch_btn_ur").addClass("hide");
+            $("#switch_btn_en").removeClass("hide");
+
+            $("#stop_ur_both").click();
+
+            $("#start_ur_both").click();
+            // $("#stop_ur_both").click();
+            // set_nonEng();
+            mode = "urd"
+            // loadContent1();
+            eng_only = false;
+
+
+
+
+        }
+
+        var appContent = document.getElementById('root');
+
+        // Add a keydown event listener to the content area
+        appContent.addEventListener('keydown', function (event) {
+            // Check if the pressed key is 'Enter' (key code 13)
+            if (event.keyCode === 83) {
+                // Perform your desired action here
+                if (eng_only) {
+
+                    $("#switch_btn_ur").click();
+
+                }
+                else {
+                    $("#switch_btn_en").click();
+                }
+            }
+        });
+        function sortAndDisplayInRTL(dictionary) {
+            const sortedText = Object.keys(dictionary)
+                .map(key => parseInt(key))
+                .sort((a, b) => a - b)
+                .map(key => dictionary[key])
+                .join(' ');
+
+            return sortedText;
+        }
+
+
+    </script>
+
+
+
+
+    </div>
+
+
+
+    <script type="module">
+        const myvad = await vad.MicVAD.new({
+            onSpeechStart: () => {
+                console.log("Speech start detected")
+            },
+            onSpeechEnd: (audio) => {
+                // do something with `audio` (Float32Array of audio samples at sample rate 16000)...
+                let url = '/process_vad/';
+                const wavBuffer = vad.utils.encodeWAV(audio)
+                console.log(wavBuffer)
+                const temp = buffer.Buffer.from(wavBuffer)
+                console.log(temp)
+                fetch(url, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        'data': temp,
+                        'uuid': uniqueId,
+                        'end': false,
+                        'mode': mode,
+                        'lang': mode
+                    }),
+                }).then(response => response.json()).then(data => {
+                    if (state_ur_eng) {
+                        // console.log(data)
+
+                        outputDiv_dictionary.value = sortAndDisplayInRTL(data['dictionary'])
+                    }
+                    else {
+                        console.log('cant fetch')
+                    }
+                }).catch(error => {
+                    console.error('Error: ', error)
+                })
+            }
+        })
+        const mimeType = "audio/webm";
+        let outputDiv_dictionary = document.getElementById('outputTextarea');
+        // relevant
+        let startButton_ur_eng = document.getElementById('start_ur_eng');
+        let stopButton_ur_eng = document.getElementById('stop_ur_eng');
+        const elapsedTimeDisplay_other = document.getElementById('elapsedTime');
+        var timeElapsed = 0;
+
+        var state_ur_eng = false
+
+
+        setInterval(function () {
+            if (state_ur_eng) {
+                elapsedTimeDisplay_other.textContent = timeElapsed;
+                timeElapsed += 0.5
+
+            }
+
+
+        }, 500);
+
+        async function startSpeech() {
+
+            myvad.start()
+            timeElapsed = 0
+
+        }
+
+        async function pauseSpeech() {
+
+            myvad.pause()
+
+        }
+
+
+
+        startButton_ur_eng.onclick = function () {
+
+
+
+            console.log("start english")
+            state_ur_eng = true;
+
+            $("#start_ur_eng").addClass("hide")
+            $("#stop_ur_eng").removeClass("hide")
+
+            startSpeech()
+
+            stopped = false;
+        }
+
+        stopButton_ur_eng.onclick = function () {
+            stopped = true;
+
+
+            pauseSpeech()
+
+            $("#stop_ur_eng").addClass("hide")
+            $("#start_ur_eng").removeClass("hide")
+            state_ur_eng = false
+        }
+
+        function getFileName(fileExtension) {
+            var d = new Date();
+            var year = d.getFullYear();
+            var month = d.getMonth();
+            var date = d.getDate();
+            return 'RecordRTC-' + year + month + date + '-' + '.' + fileExtension;
+        }
+        // this is relevant
+
+        document.getElementById('btn_download_combine_urdu').onclick = function () {
+            // this.disabled = true;
+
+            var file = new File([outputDiv_dictionary.value], getFileName('txt'), {
+                type: 'text/txt'
+            });
+            invokeSaveAsDialog(file);
+        };
+        // this is relevant
+
+
+
+
+        // Attach a click event handler to the button element with id "myButton"
+        $("#btn_clear_ur").click(function () {
+            // Your fetch operation
+            fetch("/process_rtt_urUR_clear", {
+                method: 'POST',
+                body: JSON.stringify({
+                    'uuid': uniqueId,
+                }),
+            })
+                .then(data => data.json())
+                .then(post => {
+                    outputDiv_dictionary.value = "";
+                });
+            outputDiv_dictionary.value = "";
+        });
+
+        document.getElementById('btn_copy_ur').onclick = function copyContent() {
+            console.log('btn_copy_ur clicked')
+            try {
+                navigator.clipboard.writeText(outputDiv_dictionary.value);
+                // console.log('Content copied to clipboard');
+                alert('Text Copied to Clipboard!')
+                /* Resolved - text copied to clipboard successfully */
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+                /* Rejected - text failed to copy to the clipboard */
+            }
+        }
+
+    </script>
+
+    </div>
+
+
+
+</body>
+
+</html>

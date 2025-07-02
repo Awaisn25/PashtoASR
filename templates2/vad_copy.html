@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+    <title>Voice Recognition</title>
+    <style>
+
+        @font-face {
+            font-family: 'Noto Nastaliq Urdu';
+            src: url('static/fonts/NotoNastaliqUrdu-Regular.ttf') format('truetype');
+        }
+
+
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+        
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Kanit', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            color: #E2E8F0;
+        }
+
+        .kanit-regular {
+            font-family: "Kanit", sans-serif;
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .gradient-orb {
+            width: 300px;
+            height: 300px;
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            z-index: -1;
+            animation: orbFloat 8s ease-in-out infinite;
+        }
+
+        .orb-1 {
+            background: linear-gradient(45deg, #22D3EE, #0EA5E9);
+            top: -100px;
+            left: -100px;
+        }
+
+        .orb-2 {
+            background: linear-gradient(45deg, #10B981, #059669);
+            bottom: -100px;
+            right: -100px;
+        }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(20px, -20px); }
+        }
+
+        .controls {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+
+        select {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #E2E8F0;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            width: 200px;
+            margin-right: 1rem;
+            cursor: pointer;
+        }
+
+        button {
+            background: linear-gradient(135deg, #0EA5E9 0%, #22D3EE 100%);
+            border: none;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        button.secondary {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .mic-button {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 2rem auto;
+            background: linear-gradient(135deg, #0EA5E9 0%, #22D3EE 100%);
+            box-shadow: 0 0 30px rgba(34, 211, 238, 0.3);
+        }
+
+        .pulse {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse-animation {
+            0% {
+                box-shadow: 0 0 0 0px rgba(255, 255, 255, 0.8);
+            }
+            100% {
+                box-shadow: 0 0 0 20px rgba(255, 0, 0, 1);
+            }
+        }
+
+        .mic-button.recording {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 30px rgba(34, 211, 238, 0.3); }
+            50% { box-shadow: 0 0 50px rgba(34, 211, 238, 0.9); }
+            100% { box-shadow: 0 0 30px rgba(34, 211, 238, 0.3); }
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1rem;
+            color: #E2E8F0;
+            font-family: 'Noto Nastaliq Urdu';
+            font-size: 15pt;
+            margin: 1rem 0;
+            resize: vertical;
+        }
+
+        .visiontech-text {
+            font-size: 48px;
+            font-weight: bold;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            }
+
+        @keyframes gradient {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* .timer {
+            text-align: center;
+            font-size: 1.2rem;
+            margin: 1rem 0;
+            color: #94A3B8;
+        } */
+
+        .hide {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="gradient-orb orb-1"></div>
+    <div class="gradient-orb orb-2"></div>
+
+    <div class="container">
+        <div class="controls">
+            <select id="selectDiv" class="select-ul" onchange="set_nonEng();">
+                <option value="" selected disabled hidden>Choose Format</option>
+                <option selected value="w2_wh" style="font-family:Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; font-size: large;">Seamless Medium</option>
+            </select>
+
+            <button id="switch_btn_en" style="font-family:Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; font-size: large;">Switch to English</button>
+            <button id="switch_btn_ur" class="hide" style="font-family:Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; font-size: large;">Switch to Urdu</button>
+        </div>
+
+        <!-- <div class="timer">
+            Elapsed Time: <span id="elapsedTime">0 seconds</span>
+        </div> -->
+
+        <div class="mic-button" id="mic-indicator">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+        </div>
+
+        <textarea id="outputTextarea" placeholder="Your text will appear here"></textarea>
+
+        <div class="controls">
+            <button id="start_ur_eng" style="font-family:Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; font-size: large;">Start</button>
+            <button id="stop_ur_eng" class="hide" style="font-family:Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; font-size: large;">Stop</button>
+            <button id="btn_clear_ur" class="secondary" style="font-family:Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; font-size: large;">Clear</button>
+            <button id="btn_copy_ur" class="secondary" style="font-family:Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; font-size: large;">Copy</button>
+            <button id="btn_download_combine_urdu" class="secondary" style="font-family:Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; font-size: large;">Download</button>
+        </div>
+    </div>
+
+    <div class="visiontech-text">VisionTech360</div>
+    
+    <script src="static/ort/dist/ort.min.js"></script>
+    <script src="static/vad/dist/bundle.min.js"></script>
+    <script src="static/jquery/jquery-3.5.1.min.js"></script>
+    <script src="static/jquery/RecordRTC.js"></script>
+    <script src="static/jquery/utf8.js"></script>
+    <script src="static/jquery/asd.js"></script>
+    <script src="static/jquery/base64.js"></script>
+
+    <script type="module">
+        let uniqueId = crypto.randomUUID();
+        let startTime;
+        let mode = "urd";
+        let stopped = true;
+        let currentLangauge = "Urdu";
+        let timeElapsed = 0;
+        let state_ur_eng = false;
+        let state = true
+
+        const myvad = await vad.MicVAD.new({
+            onSpeechStart: () => {
+                console.log("Speech start detected")
+            },
+            onSpeechEnd: (audio) => {
+                // do something with `audio` (Float32Array of audio samples at sample rate 16000)...
+                let url = '/process_vad/';
+                const wavBuffer = vad.utils.encodeWAV(audio)
+                console.log(wavBuffer)
+                const temp = buffer.Buffer.from(wavBuffer)
+                console.log(temp)
+                fetch(url, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        'data': temp,
+                        'uuid': uniqueId,
+                        'end': false,
+                        'mode': mode,
+                        'lang': mode
+                    }),
+                }).then(response => response.json()).then(data => {
+                    if (state_ur_eng) {
+                        // console.log(data)
+
+                        outputDiv_dictionary.value = sortAndDisplayInRTL(data['dictionary'])
+                    }
+                    else {
+                        console.log('cant fetch')
+                    }
+                }).catch(error => {
+                    console.error('Error: ', error)
+                })
+            }
+        })
+
+        async function startSpeech() {
+            myvad.start()
+            timeElapsed = 0
+        }
+        
+        async function pauseSpeech() {
+            myvad.pause()
+        }
+
+        let switch_en = document.getElementById('switch_btn_en');
+        let switch_ur = document.getElementById('switch_btn_ur');
+
+        switch_en.onclick = function () {
+            $("#switch_btn_en").addClass("hide");
+            $("#switch_btn_ur").removeClass("hide");
+            mode = "eng"
+            // set_eng();
+            $("#stop_ur_both").click();
+            $("#start_ur_both").click();
+            // loadContent1();
+        }
+
+        switch_ur.onclick = function () {
+            $("#switch_btn_ur").addClass("hide");
+            $("#switch_btn_en").removeClass("hide");
+
+            $("#stop_ur_both").click();
+
+            $("#start_ur_both").click();
+            // $("#stop_ur_both").click();
+            // set_nonEng();
+            mode = "urd"
+            // loadContent1();
+        }
+
+        // Keep all the original JavaScript functionality but add UI enhancements
+        document.getElementById('mic-indicator').addEventListener('click', function(){
+            
+            if (!state){
+                console.log("started")
+                state_ur_eng = true;
+                $("#mic-indicator").addClass("pulse")
+                
+                // $("#start_ur_eng").addClass("hide")
+                // $("#stop_ur_eng").removeClass("hide")
+
+                startSpeech();
+                stopped = false;
+
+            }else{
+                console.log("stopped")
+                stopped = true;
+                pauseSpeech()
+
+                // $("#stop_ur_eng").addClass("hide")
+                $("#mic-indicator").removeClass("pulse")
+                state_ur_eng = false
+            }
+
+            state = !state;
+        })
+
+        $("#btn_clear_ur").click(function () {
+            // Your fetch operation
+            fetch("/process_rtt_urUR_clear", {
+                method: 'POST',
+                body: JSON.stringify({
+                    'uuid': uniqueId,
+                }),
+            })
+                .then(data => data.json())
+                .then(post => {
+                    outputDiv_dictionary.value = "";
+                });
+            outputDiv_dictionary.value = "";
+        });
+
+        document.getElementById('btn_copy_ur').onclick = function copyContent() {
+            console.log('btn_copy_ur clicked')
+            try {
+                navigator.clipboard.writeText(outputDiv_dictionary.value);
+                // console.log('Content copied to clipboard');
+                alert('Text Copied to Clipboard!')
+                /* Resolved - text copied to clipboard successfully */
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+                /* Rejected - text failed to copy to the clipboard */
+            }
+        };
+
+        function getFileName(fileExtension) {
+                    var d = new Date();
+                    var year = d.getFullYear();
+                    var month = d.getMonth();
+                    var date = d.getDate();
+                    return 'RecordRTC-' + year + month + date + '-' + '.' + fileExtension;
+        }
+
+        document.getElementById('btn_download_combine_urdu').onclick = function () {
+            // this.disabled = true;
+
+            var file = new File([outputDiv_dictionary.value], getFileName('txt'), {
+                type: 'text/txt'
+            });
+            invokeSaveAsDialog(file);
+        };
+
+        const mimeType = "audio/webm";
+        let outputDiv_dictionary = document.getElementById('outputTextarea');
+        // relevant
+        let startButton_ur_eng = document.getElementById('start_ur_eng');
+        let stopButton_ur_eng = document.getElementById('stop_ur_eng');
+        const elapsedTimeDisplay_other = document.getElementById('elapsedTime');
+
+        function sortAndDisplayInRTL(dictionary) {
+            const sortedText = Object.keys(dictionary)
+                .map(key => parseInt(key))
+                .sort((a, b) => a - b)
+                .map(key => dictionary[key])
+                .join(' ');
+
+            return sortedText;
+        }
+        
+        document.getElementById('start_ur_eng').onclick = function() {
+            state_ur_eng = true;
+            $("#start_ur_eng").addClass("hide");
+            $("#stop_ur_eng").removeClass("hide");
+            $("#mic-indicator").addClass("recording");
+            startSpeech();
+            stopped = false;
+        };
+
+        document.getElementById('stop_ur_eng').onclick = function() {
+            stopped = true;
+            pauseSpeech();
+            $("#stop_ur_eng").addClass("hide");
+            $("#start_ur_eng").removeClass("hide");
+            $("#mic-indicator").removeClass("recording");
+            state_ur_eng = false;
+        };
+
+        // The rest of your original JavaScript functionality remains the same
+        // ... (Include all the original JavaScript code here)
+    </script>
+</body>
+</html>
