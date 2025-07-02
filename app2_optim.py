@@ -30,16 +30,6 @@ from faster_whisper import WhisperModel
 from starlette.responses import JSONResponse
 from predict import saluz
 
-# from pyannote.audio import Pipeline
-
-#diarization = Pipeline.from_pretrained(r"./diarization/config.yaml").to('cuda')
-
-# origins = [
-#     "http://localhost",
-#     "http://localhost:8080",
-# ]
-
-
 ############  models code
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
 
@@ -52,22 +42,6 @@ lang_dict : Dict[str, str] = {}
 buffer = io.BytesIO()
 bufferAll = io.BytesIO()
 
-
-# checkpoint = './new_nllb/new_nllb/checkpoint-5200/'
-# model_nllb = AutoModelForSeq2SeqLM.from_pretrained(checkpoint)
-# model_nllb = model_nllb.to('cuda')
-# tokenizer_nllb = AutoTokenizer.from_pretrained(checkpoint, src_lang='pbt_Arab')
-
-# translation_pipeline = pipeline('translation',
-#                                  model=model_nllb,
-#                                  tokenizer=tokenizer_nllb,
-#                                  src_lang='pbt_Arab',
-#                                  tgt_lang='urd_Arab',
-#                                  max_length = 512,
-#                                  device='cuda')
-
-# pipe_ps = pipeline("automatic-speech-recognition", model=r'C:\Users\root\Desktop\NLP_temp_local\koochikoo25\mms-1b-pashto-asr', device=torch.cuda.current_device())
-
 pipe_ps = ''
 modelUrdu=''
 processor_tiny=''
@@ -75,31 +49,8 @@ modelUrdu = ''
 model_tiny=''
 
 print('Loading Model and LM...')
-# with open('./vocab.json', 'r') as vocab_file:
-#     vocab_dict = json.load(vocab_file)
 model_id_ps = './mms_ps'
-# sorted_vocab_dict = {k.lower(): v for k, v in sorted(vocab_dict.items(), key=lambda item: item[1])}
-# decoder = build_ctcdecoder(
-#     labels=list(sorted_vocab_dict.keys()),
-#     kenlm_model_path="./ProcessorPS_LM/language_model/6gram_ps.bin",
-# )
-# processor_id_ps = './mms'
-# processor_ps = AutoProcessor.from_pretrained(model_id_ps + '/tokenizer')
-# model_ps = Wav2Vec2ForCTC.from_pretrained(model_id_ps + '/checkpoint-19000')
-# # processor_mms.tokenizer.set_target_lang("pus")
-# model_ps.load_adapter("pus")
-# model_ps = model_ps.to('cuda')
-# print('LM model loaded.'); print()
-
 print('Loading Urdu Model...') 
-# modelUrdu = WhisperModel('./whisperUrdu', device='cuda', compute_type='float16')
-
-# model_id_tiny = "./modelthree"  # best
-# processor_tiny = AutoProcessor.from_pretrained(model_id_tiny + '/urd')
-# model_tiny = Wav2Vec2ForCTC.from_pretrained(model_id_tiny).to('cuda')
-# processor_tiny.tokenizer.set_target_lang("urd")
-# model_tiny.load_adapter(f"urd", force_load=True)
-# model_tiny = model_tiny.to('cuda')
 print('Urdu model loaded...')
 
 print('Loading VAD...')
@@ -113,15 +64,6 @@ vad, utils = torch.hub.load(repo_or_dir='./VAD/snakers4',
  collect_chunks) = utils
 vad=vad.to('cpu')
 
-# vad, utils = '', ''
-
-
-# processor = AutoProcessor.from_pretrained(model_id)
-# model_transcribe = Wav2Vec2ForCTC.from_pretrained(model_id).to('cuda')
-# processor.tokenizer.set_target_lang("urd-script_arabic")
-# model_transcribe.load_adapter("urd-script_arabic")
-
-########
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -229,52 +171,19 @@ def generate(wav_data, lang, method):
     t2_vad = time.time()
     print(f'Length of Speech Segment Array: {len(speech_timestamps)}')
     print(f'Time Taken by VAD: {round(t2_vad - t1_vad, 2)} seconds.')
-    # segments = pydub.silence.split_on_silence(a, 100, silence_thresh=-16)  # Adjust the threshold as needed
-    # time_stamp = pydub.silence.detect_nonsilent(a, 100, silence_thresh=-16)  # Adjust the threshold as needed
-
     for seg in speech_timestamps:
         data = wav_data[seg['start']: seg['end']]
         if lang == 'pashto':
-            # inputs = processor_ps(data, sampling_rate=16000, return_tensors='pt').to('cuda')
-
-            # with torch.no_grad():
-                # outputs = model_ps(**inputs).logits
-
-            # ids = torch.argmax(outputs, dim=-1)[0]
-            # transcription = processor_ps.decode(ids)
-            # transcription = decoder.decode(outputs[0].cpu().detach().numpy())
-            # pred_ids = torch.argmax(outputs, dim=-1)[0]
-            # transcription = processor_ps.decode(pred_ids, skip_special_tokens=True)
             data = torch.from_numpy(data)
             transcription = saluz(data, tgt_lang='pbt', src_lang='pbt')
-            # print('trans_full', transcription)
-            #translation = translation_pipeline(transcription)[0]['translation_text']
-            # inputs = tokenizer_nllb(transcription, padding=True, truncation=True, max_length=786, return_tensors="pt").to('cuda')
-
             translation = ''
-            # with torch.no_grad():
-            #     translated_tokens = model_nllb.generate(**inputs, forced_bos_token_id=tokenizer_nllb.lang_code_to_id["urd_Arab"], 
-            #                 max_length=786, num_beams=10, num_return_sequences=1, early_stopping=True)
-
-            # translation = tokenizer_nllb.batch_decode(translated_tokens, skip_special_tokens=True)[0]
             translation = saluz(data, tgt_lang='urd', src_lang='pbt')
-            #transcription = pipe_ps(data)['text']
-            #print(transcription)
-            #translation = translation_pipeline(transcription)[0]['translation_text']
+            
         elif lang == 'dari':
             print('Skipping Dari.')
         else:
-            # segments, info = modelUrdu.transcribe(data, vad_filter=False, language='ur')
-            # # segments, info = modelUrdu.transcribe(data, vad_filter=False, language='ur')
-            # transcription = ''
-            # # print(list(segments))
-            # for segment in segments:
-            #     transcription += segment.text
             data = torch.from_numpy(data)
             transcription = saluz(data, tgt_lang='pbt', src_lang='urd')
-            
-            #translation = translation_pipeline(transcription)[0]['translation_text']
-        # full_transcription = full_transcription + '\n' + milliseconds_to_time(seg) + transcription
         transcription = milliseconds_to_time(seg) + '    '  +  transcription + '\n'
         if lang != 'urdu':
             full_translation = milliseconds_to_time(seg) + '    ' + translation + '\n'
@@ -460,30 +369,6 @@ async def process_rtt_endpoint_dr(request: Request):
 
 def transcribe(data_arr, lang, end_of_sentence, fvad):
     if lang == 'urdu':
-        # if end_of_sentence:
-        # # input_features = processor(data, sampling_rate=16000, return_tensors="pt").input_features.to(
-        # #     'cuda')
-        # # predicted_ids = model.generate(input_features, num_beams=3, forced_decoder_ids=forced_decoder_ids)
-        # # transcription = processor.batch_decode(predicted_ids, skip_special_tokens=True)[0]
-
-        #     segments, info = modelUrdu.transcribe(data_arr, vad_filter=False, beam_size=3, language='ur',
-        #                                           without_timestamps=True)  # ,vad_parameters=dict(min_silence_duration_ms=200), )
-        #     transcription = ''
-        #     for segment in segments:
-        #         transcription += segment.text
-        # else:
-        #     inputs = processor_tiny(data_arr, sampling_rate=SAMPLE_RATE, return_tensors="pt").to('cuda')
-        #     with torch.no_grad():
-        #         outputs = model_tiny(**inputs).logits
-        #     ids = torch.argmax(outputs, dim=-1)[0]
-        #     transcription = processor_tiny.decode(ids)
-
-        ## NO END-OF-SENTENCE
-        # inputs = processor_tiny(data_arr, sampling_rate=SAMPLE_RATE, return_tensors="pt").to('cuda')
-        # with torch.no_grad():
-        #     outputs = model_tiny(**inputs).logits
-        # ids = torch.argmax(outputs, dim=-1)[0]
-        # transcription = processor_tiny.decode(ids)
         data_arr = torch.from_numpy(data_arr)
         transcription = saluz(data_arr, "urd")
         transcription = str(transcription)
@@ -491,22 +376,6 @@ def transcribe(data_arr, lang, end_of_sentence, fvad):
 
 
     if lang == 'pashto':
-        # inputs = processor_ps(data_arr, sampling_rate=SAMPLE_RATE, return_tensors="pt").to('cuda')
-        # with torch.no_grad():
-        #     outputs = model_ps(**inputs).logits
-        # transcription = processor_ps.batch_decode(outputs.cpu().numpy(), ).text
-        
-        # ids = torch.argmax(outputs, dim=-1)[0]
-        # transcription = processor_ps.decode(ids, skip_special_tokens=True)
-        # transcription = processor_ps.batch_decode(outputs.cpu().numpy(),).text
-        # print('decoding...')
-        # transcription = decoder.decode(outputs[0].cpu().detach().numpy())
-        # print(outputs.shape)
-        # pred_ids = torch.argmax(outputs, dim=-1)[0]
-        # print(pred_ids)
-        # transcription = processor_ps.decode(pred_ids, skip_special_tokens=True)
-        # print('trans_live', transcription)
-        # print(transcription)
         data_arr = torch.from_numpy(data_arr)
         transcription = saluz(data_arr, tgt_lang="pbt", src_lang='pbt')
         transcription = str(transcription)
@@ -521,38 +390,16 @@ def transcribe(data_arr, lang, end_of_sentence, fvad):
         else:
             retObj = {"transcribe": transcription}
 
-
-    if lang == 'dari':
-        # inputs = processor_ps(data_arr, sampling_rate=16000, return_tensors="pt").to('cuda')
-        # with torch.no_grad():
-        #     outputs = model_ps(**inputs).logits
-        # transcription = processor_ps.batch_decode(outputs.cpu().numpy(),).text
-        # transcription = translate(transcription, 'prs_Arab')
-        pass
     return retObj
 
 
 def translate(data_arr:np.array, tgt_lang:str):
-    # print(f'text: {text}')
-    # inputs = tokenizer_nllb(text, padding=True, truncation=True, max_length=786, return_tensors="pt").to('cuda')
-
-    # with torch.no_grad():
-    #     translated_tokens = model_nllb.generate(**inputs, forced_bos_token_id=tokenizer_nllb.lang_code_to_id["urd_Arab"], 
-    #                     max_length=786, num_beams=4, num_return_sequences=1, early_stopping=True)
-
-    # output = tokenizer_nllb.decode(translated_tokens[0], skip_special_tokens=True)
-    # print(f'Translation: {output}')
-    # return output
     data_arr = torch.from_numpy(data_arr)
     output = saluz(data_arr, tgt_lang=tgt_lang, src_lang='pbt')
     output = str(output)
     return output    
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="10.23.23.9", port=8000, log_level="info", 
-                ssl_certfile="./certs/10.23.23.9/cert.pem", 
-                ssl_keyfile="./certs/10.23.23.9/key.pem")
-    # uvicorn.run(app, host="127.0.0.1", port=8001)
-    # uvicorn.run('app_all_final:app', host="127.0.0.1", port=8000, log_level="info", reload=False)
-    # uvicorn.run(app, host="127.0.0.1", port=8000, log_level="info",ssl_certfile="cert.crt", ssl_keyfile="cert.key")
-    # uvicorn.run("app:app")
+    uvicorn.run(app, host="<host>", port=8000, log_level="info", 
+                ssl_certfile="./certs/cert.pem", 
+                ssl_keyfile="./certs/key.pem")
